@@ -1,0 +1,20 @@
+{
+	"manifest_version": 2,
+
+	"name": "go-ogle",
+	"description": "search google and stuff",
+	"version":  "0.1",
+
+	"permissions": [
+		"tabs", "<all_urls>", "sessions", "storage", "activeTab"
+	],
+
+	"background": {
+		"scripts": ["background.js"],
+    	"persistent": false
+	},
+
+	"browser_action": {
+    	"default_title": "Make this page red"
+  	}
+}
