@@ -3,6 +3,7 @@ package main
 ////////////////////////////////////////////////////////////////////////////////
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -16,6 +17,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/pkg/term"
 
 	"github.com/sabhiram/go-ogle/hub"
 	"github.com/sabhiram/go-ogle/server"
@@ -66,25 +68,10 @@ func setPID(pid int) error {
 	return ioutil.WriteFile(pidFile, []byte(fmt.Sprintf("%d", pid)), 0777)
 }
 
-func spawnServerThread() error {
-	cmd := exec.Command("go-ogle", "-server")
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-	return setPID(cmd.Process.Pid)
-}
-
 func serverRunning() (bool, error) {
 	// Check for pid file, if it does not exist return false.
-	pid, err := getPID()
+	_, err := getPID()
 	if err != nil {
-		return false, err
-	}
-
-	// If the pid file exists, check if the pid is running, if
-	// not, remove the pid file and return false.
-	p, err := os.FindProcess(pid)
-	if p == nil || err != nil {
 		return false, err
 	}
 
@@ -105,6 +92,48 @@ func serverMain(args []string) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+func spawnServerThread() error {
+	cmd := exec.Command("go-ogle", "-server")
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	err := setPID(cmd.Process.Pid)
+	if err != nil {
+		return err
+	}
+
+	// Delay for a tiny bit to let the server socket power up.
+	fmt.Printf("Allowing server to startup before attempting connection...\n")
+	<-time.After(1000 * time.Millisecond) // TODO: Once the hub can forward commands to the ext, make this 10ms
+	return nil
+}
+
+func getch() []byte {
+	t, _ := term.Open("/dev/tty")
+	term.RawMode(t)
+
+	c := make([]byte, 3)
+	n, err := t.Read(c)
+	t.Restore()
+	t.Close()
+
+	if err != nil {
+		return nil
+	}
+	return c[0:n]
+}
+
+func sendMessage(c *websocket.Conn, t string, d interface{}) error {
+	sm := types.NewSocketMessage(t, d)
+	bs, err := sm.Marshal()
+	if err != nil {
+		return err
+	}
+
+	return c.WriteMessage(websocket.TextMessage, bs)
+}
+
 func childMain(args []string) {
 	// Check to see if the server is running
 	running, _ := serverRunning()
@@ -115,40 +144,45 @@ func childMain(args []string) {
 
 	u := url.URL{Scheme: "ws", Host: "localhost:18881", Path: "/ws"}
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	if err != nil {
+		err = spawnServerThread()
+		fatalOnError(err)
+
+		// Try again now that we kicked off a server thread.
+		c, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
+	}
 	fatalOnError(err)
 	defer c.Close()
 
 	q := fmt.Sprintf("https://www.google.com/search?q=%s", strings.Join(args, "+"))
-	m := types.NewSocketMessage("open_new_tab_with_url", q)
-	bs, err := m.Marshal()
-	fatalOnError(err)
+	sendMessage(c, "open_new_tab_with_url", q)
 
-	err = c.WriteMessage(websocket.TextMessage, bs)
-	fatalOnError(err)
-
-	// TESTING: wait 3 sec, choose next result, wait 3 sec select it.
-	{
-		<-time.After(3 * time.Second)
-		m.Type = "next_result"
-		bs, err = m.Marshal()
+	defer func() {
+		err = c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 		fatalOnError(err)
+	}()
 
-		err = c.WriteMessage(websocket.TextMessage, bs)
-		fatalOnError(err)
+	for {
+		ch := getch()
+		switch {
+		case bytes.Equal(ch, []byte{3}) || bytes.Equal(ch, []byte{27}):
+			return
 
-		<-time.After(3 * time.Second)
-		m.Type = "select_current_result"
-		bs, err = m.Marshal()
-		fatalOnError(err)
+		case bytes.Equal(ch, []byte{13}):
+			err := sendMessage(c, "select_current_result", "")
+			fatalOnError(err)
+			return
+		case bytes.Equal(ch, []byte{27, 91, 65}):
+			err := sendMessage(c, "prev_result", "")
+			fatalOnError(err)
+		case bytes.Equal(ch, []byte{27, 91, 66}):
+			err := sendMessage(c, "next_result", "")
+			fatalOnError(err)
 
-		err = c.WriteMessage(websocket.TextMessage, bs)
-		fatalOnError(err)
-
-		<-time.After(3 * time.Second)
+		default:
+			fmt.Printf("Unknown key pressed %v\n", c)
+		}
 	}
-
-	err = c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-	fatalOnError(err)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

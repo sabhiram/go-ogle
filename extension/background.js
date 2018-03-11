@@ -1,6 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 let last_port = null
+  , ws 		  = null
   ;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -14,24 +15,43 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+getSingleton = function(func) {
+    return function() {
+		var base, pf, ref;
+		let args = (1 <= arguments.length) ? slice.call(arguments, 0) : [];
+		ref = [func, null], pf = ref[0], func = ref[1];
+		base = ref;
+		return typeof base[0] === "function" ? base[0].apply(base, args) : void 0;
+    };
+}
+
+tryReconnect = function() {
+	last_port = null;
+	console.log("Try again in 1000ms");
+	setTimeout(connectToServer, 1000);
+}
+
 // Function that connects to the `go-ogle` server and listens for commands
 // to run in browser.
 connectToServer = function() {
+	let reconnect = getSingleton(tryReconnect);
+
 	const url = "ws://localhost:18881/ws";
-	ws = new WebSocket(url);
+	
+	try {
+		ws = new WebSocket(url);
+	} catch(e) {
+	}
+
 
 	ws.onopen = function() {
-		console.log("Socket open");
+		// socket is open ...
 	};
 	ws.onerror = function(err) {
-		console.log("Socket error: ", err);
-		last_port = null;
-		// TODO: Retry
+		reconnect();
 	};
 	ws.onclose = function(err) {
-		console.log("Socket error: ", err);
-		last_port = null;
-		// TODO: Retry	
+		reconnect();
 	};
 	ws.onmessage = function(e) {
 		let data = JSON.parse(e.data);
@@ -77,3 +97,16 @@ chrome.runtime.onConnect.addListener(function(port) {
 });
 
 ////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
