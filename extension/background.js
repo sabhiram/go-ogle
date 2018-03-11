@@ -1,3 +1,7 @@
+////////////////////////////////////////////////////////////////////////////////
+
+let last_port = null
+  ;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -21,16 +25,16 @@ connectToServer = function() {
 	};
 	ws.onerror = function(err) {
 		console.log("Socket error: ", err);
+		last_port = null;
 		// TODO: Retry
 	};
 	ws.onclose = function(err) {
 		console.log("Socket error: ", err);
+		last_port = null;
 		// TODO: Retry	
 	};
 	ws.onmessage = function(e) {
-		console.log(e);
 		let data = JSON.parse(e.data);
-		console.log(data)
 		if (data["Type"] == "CHROME_COMMAND") {
 			chrome.tabs.create({ url: data["Data"] });
 		}
@@ -39,6 +43,26 @@ connectToServer = function() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+// Connect to the websocket server that will send us commands.
 connectToServer();
+
+// Setup a listener so we can catch chrome sockets connecting to the extension
+// from a page which has `content_script.js` injected.
+chrome.runtime.onConnect.addListener(function(port) {
+	console.assert(port.name == "go-ogle");
+
+	port.onMessage.addListener(function(msg) {
+		console.log("Page => Extension : ", msg);
+	});
+
+	last_port = port;
+	last_port.postMessage({command: "select_result", slot: 0});
+
+	setInterval(function() {
+		if (last_port) {
+			last_port.postMessage({command: "select_next_result"});
+		}
+	}, 1000)
+});
 
 ////////////////////////////////////////////////////////////////////////////////
