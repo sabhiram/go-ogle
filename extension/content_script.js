@@ -15,7 +15,7 @@ var port = chrome.runtime.connect({name: "go-ogle"})
   ;
 
 function getResult(idx) {
-	let results = document.querySelectorAll("#search .g .rc");
+	let results = document.querySelectorAll("#search .srg .g .rc");
 	if (results.length > idx) return results[idx];
 	return null;
 }
