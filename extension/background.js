@@ -2,6 +2,8 @@
 
 let last_port = null
   , ws 		  = null
+  , last_win  = -1
+  , last_tab  = -1
   ;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -27,6 +29,8 @@ getSingleton = function(func) {
 
 tryReconnect = function() {
 	last_port = null;
+	last_tab  = -1;
+	last_win  = -1;
 	console.log("Try again in 1000ms");
 	setTimeout(connectToServer, 1000);
 }
@@ -57,6 +61,8 @@ connectToServer = function() {
 		let data = JSON.parse(e.data);
 		if (data["Type"] == "open_new_tab_with_url") {
 			chrome.tabs.create({ url: data["Data"] }, function(tab) {
+				last_tab = tab.id;
+				last_win = tab.windowId;
 				chrome.tabs.executeScript(tab.id, {file: "content_script.js"});
 			});
 		}
@@ -73,6 +79,9 @@ connectToServer = function() {
 		else if (data["Type"] == "select_current_result") {
 			if (last_port) {
 				last_port.postMessage({command: "select_current_result"});
+				if (last_win > 0 && last_tab > 0) {
+					chrome.windows.update(last_win, {"focused": true, "drawAttention": true});
+				}
 			}
 		}
 	};
