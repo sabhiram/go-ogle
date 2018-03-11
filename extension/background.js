@@ -35,6 +35,12 @@ tryReconnect = function() {
 	setTimeout(connectToServer, 1000);
 }
 
+portSend = function(obj) {
+	if (last_port) {
+		last_port.postMessage(obj);
+	}
+}
+
 // Function that connects to the `go-ogle` server and listens for commands
 // to run in browser.
 connectToServer = function() {
@@ -66,22 +72,19 @@ connectToServer = function() {
 				chrome.tabs.executeScript(tab.id, {file: "content_script.js"});
 			});
 		}
-		else if (data["Type"] == "next_result") {
-			if (last_port) {
-				last_port.postMessage({command: "highlight_next_result"});
-			}
-		}
-		else if (data["Type"] == "prev_result") {
-			if (last_port) {
-				last_port.postMessage({command: "highlight_prev_result"});
-			}
-		}
 		else if (data["Type"] == "select_current_result") {
 			if (last_port) {
 				last_port.postMessage({command: "select_current_result"});
 				if (last_win > 0 && last_tab > 0) {
 					chrome.windows.update(last_win, {"focused": true, "drawAttention": true});
 				}
+			}
+		}
+		else {
+			// All other message types are blindly forwarded to the downstream page 
+			// of search results (the last one that connected).
+			if (last_port) {
+				last_port.postMessage({command: data["Type"], data: data["Data"]})
 			}
 		}
 	};

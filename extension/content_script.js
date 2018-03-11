@@ -51,6 +51,7 @@ function setPageURL(idx) {
 }
 
 port.onMessage.addListener(function(msg) {
+	console.log(msg);
 	if (!msg.command) return;
 
 	switch (msg.command) {
@@ -67,6 +68,11 @@ port.onMessage.addListener(function(msg) {
 		break;
 	case "select_current_result":
 		setPageURL(indx);
+		break;
+	case "clear_selected":
+		unhighlighResult(curr);
+		indx = 0;
+		curr = null;
 		break;
 	default:
 		port.postMessage({type: "error", msg: "invalid command specified"});

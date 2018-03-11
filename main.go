@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gorilla/websocket"
 	"github.com/pkg/term"
@@ -109,7 +110,7 @@ func spawnServerThread() error {
 	return nil
 }
 
-func getch() []byte {
+func getKeyPress() []byte {
 	t, _ := term.Open("/dev/tty")
 	term.RawMode(t)
 
@@ -158,29 +159,32 @@ func childMain(args []string) {
 	sendMessage(c, "open_new_tab_with_url", q)
 
 	defer func() {
+		err = sendMessage(c, "clear_selected", "")
+		fatalOnError(err)
+
 		err = c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 		fatalOnError(err)
 	}()
 
 	for {
-		ch := getch()
+		key := getKeyPress()
 		switch {
-		case bytes.Equal(ch, []byte{3}) || bytes.Equal(ch, []byte{27}):
+		case bytes.Equal(key, []byte{3}) || bytes.Equal(key, []byte{27}):
 			return
-
-		case bytes.Equal(ch, []byte{13}):
+		case bytes.Equal(key, []byte{13}):
 			err := sendMessage(c, "select_current_result", "")
 			fatalOnError(err)
 			return
-		case bytes.Equal(ch, []byte{27, 91, 65}):
-			err := sendMessage(c, "prev_result", "")
+		case bytes.Equal(key, []byte{27, 91, 65}):
+			err := sendMessage(c, "highlight_prev_result", "")
 			fatalOnError(err)
-		case bytes.Equal(ch, []byte{27, 91, 66}):
-			err := sendMessage(c, "next_result", "")
+		case bytes.Equal(key, []byte{27, 91, 66}):
+			err := sendMessage(c, "highlight_next_result", "")
 			fatalOnError(err)
-
 		default:
-			fmt.Printf("Unknown key pressed %v\n", c)
+			r, _ := utf8.DecodeRune(key)
+			fmt.Printf("Unknown key pressed (%c)\n", r)
+			return
 		}
 	}
 }
