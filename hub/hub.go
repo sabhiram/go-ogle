@@ -15,7 +15,7 @@ import (
 type Hub struct {
 	sockets map[*socket.Socket]struct{}
 
-	broadcastCh  chan []byte
+	broadcastCh  chan *types.SocketMessage
 	registerCh   chan *socket.Socket
 	unregisterCh chan *socket.Socket
 }
@@ -25,7 +25,7 @@ func New() (*Hub, error) {
 	return &Hub{
 		sockets: map[*socket.Socket]struct{}{},
 
-		broadcastCh:  make(chan []byte),
+		broadcastCh:  make(chan *types.SocketMessage),
 		registerCh:   make(chan *socket.Socket),
 		unregisterCh: make(chan *socket.Socket),
 	}, nil
@@ -44,38 +44,14 @@ func (h *Hub) UnregisterSocket(s *socket.Socket) {
 	h.unregisterCh <- s
 }
 
-// Send a message to the specified socket.
-func (h *Hub) Send(s *socket.Socket, msg []byte) {
-	s.Send(msg)
-}
-
-func (h *Hub) SendJSON(s *socket.Socket, t string, d interface{}) error {
-	sm := types.NewSocketMessage(t, d)
-	bs, err := sm.Marshal()
-	if err != nil {
-		return err
-	}
-	h.Send(s, bs)
-	return nil
-}
-
-// Broadcast a message to all subscribed sockets.
-func (h *Hub) Broadcast(msg []byte) {
-	fmt.Printf("Broadcast message: %s\n", msg)
-	h.broadcastCh <- msg
-}
-
 // BroadcastJSON sends a packet of the format:
 // {"Type": "`type`", "Data": interface{}}.
 func (h *Hub) BroadcastJSON(t string, d interface{}) error {
-	sm := types.NewSocketMessage(t, d)
-	bs, err := sm.Marshal()
-	if err != nil {
-		return err
-	}
-	h.Broadcast(bs)
+	h.broadcastCh <- types.NewSocketMessage(t, d)
 	return nil
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 // Run kicks off an endless loop that processes the websocket hub.  This is
 // responsible for registering and unregistering sockets as we ll as
@@ -96,9 +72,9 @@ func (h *Hub) Run() {
 			}
 
 		// Broadcast.
-		case msg := <-h.broadcastCh:
+		case sm := <-h.broadcastCh:
 			for socket := range h.sockets {
-				socket.Send(msg)
+				socket.Send(sm)
 			}
 
 		}

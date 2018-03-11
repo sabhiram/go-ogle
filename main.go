@@ -158,13 +158,13 @@ func childMain(args []string) {
 	q := fmt.Sprintf("https://www.google.com/search?q=%s", strings.Join(args, "+"))
 	sendMessage(c, "open_new_tab_with_url", q)
 
-	defer func() {
+	defer func(c *websocket.Conn) {
 		err = sendMessage(c, "clear_selected", "")
 		fatalOnError(err)
 
 		err = c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 		fatalOnError(err)
-	}()
+	}(c)
 
 	for {
 		key := getKeyPress()

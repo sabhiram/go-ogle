@@ -17,35 +17,9 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-getSingleton = function(func) {
-    return function() {
-		var base, pf, ref;
-		let args = (1 <= arguments.length) ? slice.call(arguments, 0) : [];
-		ref = [func, null], pf = ref[0], func = ref[1];
-		base = ref;
-		return typeof base[0] === "function" ? base[0].apply(base, args) : void 0;
-    };
-}
-
-tryReconnect = function() {
-	last_port = null;
-	last_tab  = -1;
-	last_win  = -1;
-	console.log("Try again in 1000ms");
-	setTimeout(connectToServer, 1000);
-}
-
-portSend = function(obj) {
-	if (last_port) {
-		last_port.postMessage(obj);
-	}
-}
-
 // Function that connects to the `go-ogle` server and listens for commands
 // to run in browser.
-connectToServer = function() {
-	let reconnect = getSingleton(tryReconnect);
-
+connect = function() {
 	const url = "ws://localhost:18881/ws";
 	
 	try {
@@ -92,9 +66,6 @@ connectToServer = function() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Connect to the websocket server that will send us commands.
-connectToServer();
-
 // Setup a listener so we can catch chrome sockets connecting to the extension
 // from a page which has `content_script.js` injected.
 chrome.runtime.onConnect.addListener(function(port) {
@@ -107,6 +78,18 @@ chrome.runtime.onConnect.addListener(function(port) {
 	last_port = port;
 	last_port.postMessage({command: "highlight_result", slot: 0});
 });
+
+////////////////////////////////////////////////////////////////////////////////
+
+_connect = _.throttle(connect, 1000);
+reconnect = function() {
+	last_port = null;
+	last_tab  = -1;
+	last_win  = -1;
+	_connect();
+}
+
+reconnect();
 
 ////////////////////////////////////////////////////////////////////////////////
 

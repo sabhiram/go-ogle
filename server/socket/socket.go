@@ -15,14 +15,14 @@ import (
 
 type Socket struct {
 	conn   *websocket.Conn
-	sendCh chan []byte
+	sendCh chan *types.SocketMessage
 	jb     types.JSONBroadcaster
 }
 
 func New(c *websocket.Conn, jb types.JSONBroadcaster) *Socket {
 	return &Socket{
 		conn:   c,
-		sendCh: make(chan []byte, 1024),
+		sendCh: make(chan *types.SocketMessage),
 		jb:     jb,
 	}
 }
@@ -70,32 +70,16 @@ func (s *Socket) Write() {
 
 	for {
 		select {
-		case msg, ok := <-s.sendCh:
-			s.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+		case sm, ok := <-s.sendCh:
+			// s.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			// Handle case when the hub / app closes a socket.
 			if !ok {
 				s.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-
-			// Write the message to the next websocket writer available.
-			w, err := s.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
+			if err := s.conn.WriteJSON(sm); err != nil {
 				return
 			}
-			w.Write(msg)
-
-			// Drain the buffered send channel.
-			n := len(s.sendCh)
-			for i := 0; i < n; i++ {
-				m := <-s.sendCh
-				w.Write(m)
-			}
-
-			if err := w.Close(); err != nil {
-				return
-			}
-
 		case <-ticker.C:
 			s.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if err := s.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
@@ -107,8 +91,8 @@ func (s *Socket) Write() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func (s *Socket) Send(msg []byte) {
-	s.sendCh <- msg
+func (s *Socket) Send(sm *types.SocketMessage) {
+	s.sendCh <- sm
 }
 
 func (s *Socket) Close() {
