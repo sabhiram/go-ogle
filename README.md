@@ -1,6 +1,6 @@
 # go-ogle
 
-A command line way, to search google in a chrome tab.
+A command line way to search google in a chrome tab.
 
 ## What?
 
@@ -15,11 +15,11 @@ TODO
 
 ## Contents
 
-`extension` implements the chrome extension implemented in Javascript.
-`hub` implements a golang library that implements a pub-sub socket.
-`server` implements a golang websocket server library.
-`types` contain application specific types that are usually passed around library instances.
-`main.go` implements the cli app which will self-spawn a daemon process to connect to.
+* `extension` implements the chrome extension implemented in Javascript.
+* `hub` implements a golang library that implements a pub-sub socket.
+* `server` implements a golang websocket server library.
+* `types` contain application specific types that are usually passed around library instances.
+* `main.go` implements the cli app which will self-spawn a daemon process to connect to.
 
 ## TODOs
 
