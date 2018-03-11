@@ -14,41 +14,59 @@ var port = chrome.runtime.connect({name: "go-ogle"})
   , curr = null
   ;
 
-function selectResult(el) {
+function getResult(idx) {
+	let results = document.querySelectorAll("#search .g");
+	if (results.length > idx) return results[idx];
+	return null;
+}
+
+function highlighResult(el) {
 	el.style.backgroundColor = "#3232d240";
 }
 
-function unselectResult(el) {
+function unhighlighResult(el) {
 	el.style.backgroundColor = "transparent";
 }
 
-function setSelectedResult(idx) {
-	let results = document.querySelectorAll("#search .g");
-	if (results.length > idx) {
-		if (curr != null) {
-			unselectResult(curr);
-		}
+function setHighlightedResult(idx) {
+	let el = getResult(idx);
+	if (!el) return;
 
-		indx = idx;
-		curr = results[indx];
-		selectResult(curr);
+	if (curr != null) {
+		unhighlighResult(curr);
 	}
+
+	indx = idx;
+	curr = el;
+	highlighResult(curr);
+}
+
+function setPageURL(idx) {
+	let el = getResult(idx);
+	if (!el) return;
+
+	let a = el.querySelector("h3.r a");
+	
+	window.location = a.href;
 }
 
 port.onMessage.addListener(function(msg) {
 	if (!msg.command) return;
 
 	switch (msg.command) {
-	case "select_result":
+	case "highlight_result":
 		if (msg.slot != undefined && typeof msg.slot == "number") {
-			setSelectedResult(msg.slot);
+			setHighlightedResult(msg.slot);
 		}
 		break;
-	case "select_next_result":
-		setSelectedResult(indx + 1);
+	case "highlight_next_result":
+		setHighlightedResult(indx + 1);
 		break;
-	case "select_prev_result":
-		setSelectedResult(indx - 1);
+	case "highlight_prev_result":
+		setHighlightedResult(indx - 1);
+		break;
+	case "select_current_result":
+		setPageURL(indx);
 		break;
 	default:
 		port.postMessage({type: "error", msg: "invalid command specified"});

@@ -8,23 +8,13 @@
     "permissions": [
         "activeTab",
         "tabs",
-        "https://www.google.com/*"
-    ],
-
-    "content_scripts": [
-        {
-            "matches":  ["https://www.google.com/*"],
-            "css":      [],
-            "js":       ["content_script.js"]
-        }
+        "https://www.google.com/search*"
     ],
 
     "background": {
         "scripts": ["background.js"],
         "persistent": false
     },
-
-
 
     "browser_action": {
         "default_title": "go-ogle"

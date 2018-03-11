@@ -15,5 +15,12 @@ TODO
 
 ## Contents
 
-`extension` contains the chrome extension implemented in Javascript.
-`main.go` implement the cli app.
+`extension` implements the chrome extension implemented in Javascript.
+`hub` implements a golang library that implements a pub-sub socket.
+`server` implements a golang websocket server library.
+`types` contain application specific types that are usually passed around library instances.
+`main.go` implements the cli app which will self-spawn a daemon process to connect to.
+
+## TODOs
+
+1. Client app does not yet poll on keyboard input.

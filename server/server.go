@@ -5,7 +5,6 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"net/http/pprof"
 
 	"github.com/gorilla/websocket"
 
@@ -26,7 +25,6 @@ var (
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 		CheckOrigin: func(r *http.Request) bool {
-			fmt.Printf("CheckOrigin: %s\n", r.URL.String())
 			return true
 		},
 	}
@@ -37,8 +35,7 @@ var (
 // Server handles all websocket, HTTP API and file requests.
 type Server struct {
 	*http.Server
-
-	hub *hub.Hub // websocket hub
+	hub *hub.Hub
 }
 
 // New returns an instance of Server.
@@ -55,13 +52,6 @@ func New(addr string, h *hub.Hub) (*Server, error) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-func (s *Server) todoHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("TODO handler hit!\n")
-		w.Write([]byte("TODO"))
-	}
-}
 
 func (s *Server) wsHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -85,25 +75,16 @@ func (s *Server) wsHandler() http.HandlerFunc {
 
 func (s *Server) setupRoutes() error {
 	mux := http.NewServeMux()
-
-	// Debugging
-	if cEnableDebugProfiling {
-		mux.HandleFunc("/debug/pprof/", pprof.Index)
-		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-	}
-
 	mux.Handle("/ws", s.wsHandler())
 
 	s.Handler = mux
+
 	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 func (s *Server) Start() {
-	fmt.Printf("Kicking off webserver at: %s\n", s.Addr)
 	if err := s.ListenAndServe(); err != nil {
 		fmt.Printf("error :: webserver died :: %s\n", err.Error())
 	}

@@ -53,11 +53,7 @@ func (s *Socket) Read() {
 		case websocket.TextMessage:
 			sm := types.SocketMessage{}
 			sm.Unmarshal(msg)
-			fmt.Printf("wsHandler :: got message :: %#v\n", sm)
-			switch sm.Type {
-			case "CLI_COMMAND_OPEN_CHROME_TAB":
-				s.jb.BroadcastJSON("CHROME_COMMAND", sm.Data)
-			}
+			s.jb.BroadcastJSON(sm.Type, sm.Data)
 		default:
 			fmt.Printf("wsHandler :: unknown message type :: %d\n", mt)
 		}

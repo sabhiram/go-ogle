@@ -35,8 +35,25 @@ connectToServer = function() {
 	};
 	ws.onmessage = function(e) {
 		let data = JSON.parse(e.data);
-		if (data["Type"] == "CHROME_COMMAND") {
-			chrome.tabs.create({ url: data["Data"] });
+		if (data["Type"] == "open_new_tab_with_url") {
+			chrome.tabs.create({ url: data["Data"] }, function(tab) {
+				chrome.tabs.executeScript(tab.id, {file: "content_script.js"});
+			});
+		}
+		else if (data["Type"] == "next_result") {
+			if (last_port) {
+				last_port.postMessage({command: "highlight_next_result"});
+			}
+		}
+		else if (data["Type"] == "prev_result") {
+			if (last_port) {
+				last_port.postMessage({command: "highlight_prev_result"});
+			}
+		}
+		else if (data["Type"] == "select_current_result") {
+			if (last_port) {
+				last_port.postMessage({command: "select_current_result"});
+			}
 		}
 	};
 }
@@ -56,13 +73,7 @@ chrome.runtime.onConnect.addListener(function(port) {
 	});
 
 	last_port = port;
-	last_port.postMessage({command: "select_result", slot: 0});
-
-	setInterval(function() {
-		if (last_port) {
-			last_port.postMessage({command: "select_next_result"});
-		}
-	}, 1000)
+	last_port.postMessage({command: "highlight_result", slot: 0});
 });
 
 ////////////////////////////////////////////////////////////////////////////////
