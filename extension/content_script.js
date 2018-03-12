@@ -21,11 +21,15 @@ function getResult(idx) {
 }
 
 function highlighResult(el) {
-	el.style.backgroundColor = "#3232d240";
+	// The style is applied and removed from the parent to get its 
+	// padding highlighted as well.
+	el.parentElement.classList.add("ogle-selected");
 }
 
 function unhighlighResult(el) {
-	el.style.backgroundColor = "transparent";
+	// The style is applied and removed from the parent to get its 
+	// padding highlighted as well.
+	el.parentElement.classList.remove("ogle-selected");
 }
 
 function setHighlightedResult(idx) {
@@ -45,9 +49,7 @@ function setPageURL(idx) {
 	let el = getResult(idx);
 	if (!el) return;
 
-	let a = el.querySelector("h3.r a");
-	
-	window.location = a.href;
+	window.location = el.querySelector("h3.r a").href;
 }
 
 port.onMessage.addListener(function(msg) {
@@ -75,7 +77,6 @@ port.onMessage.addListener(function(msg) {
 		curr = null;
 		break;
 	default:
-		port.postMessage({type: "error", msg: "invalid command specified"});
 		break;
 	}
 });

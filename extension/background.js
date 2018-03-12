@@ -15,6 +15,17 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 
 });
 
+// Detect when the browser is in focus, this should send a message to clients
+// letting them know that they can disconnect.
+chrome.windows.onFocusChanged.addListener(function(window) {
+	if (window != chrome.windows.WINDOW_ID_NONE) {
+		console.log(ws);
+		if (ws) {
+			ws.send(JSON.stringify({Type: "browser_has_focus", Data: ""}));
+		}
+	}
+});
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // Function that connects to the `go-ogle` server and listens for commands
@@ -32,9 +43,11 @@ connect = function() {
 		ws.send(JSON.stringify({Type: "register_extension", Data: ""}));
 	};
 	ws.onerror = function(err) {
+		console.log("ONERROR: ", err);
 		reconnect();
 	};
 	ws.onclose = function(err) {
+		console.log("ONCLOSE: ", err);
 		reconnect();
 	};
 	ws.onmessage = function(e) {
@@ -43,6 +56,7 @@ connect = function() {
 			chrome.tabs.create({ url: data["Data"] }, function(tab) {
 				last_tab = tab.id;
 				last_win = tab.windowId;
+				chrome.tabs.insertCSS(tab.id, {file: "style.css"});
 				chrome.tabs.executeScript(tab.id, {file: "content_script.js"});
 			});
 		}

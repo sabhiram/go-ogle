@@ -108,19 +108,13 @@ func spawnServerThread() error {
 	return nil
 }
 
-func getKeyPress() []byte {
-	t, _ := term.Open("/dev/tty")
-	term.RawMode(t)
-
-	c := make([]byte, 3)
-	n, err := t.Read(c)
-	t.Restore()
-	t.Close()
-
+func getKeyPress(t *term.Term) []byte {
+	buf := make([]byte, 3)
+	n, err := t.Read(buf)
 	if err != nil {
 		return nil
 	}
-	return c[0:n]
+	return buf[0:n]
 }
 
 func sendMessage(c *websocket.Conn, t string, d interface{}) error {
@@ -131,6 +125,22 @@ func sendMessage(c *websocket.Conn, t string, d interface{}) error {
 	}
 
 	return c.WriteMessage(websocket.TextMessage, bs)
+}
+
+func readWSMessages(c *websocket.Conn, ch chan<- *types.SocketMessage) {
+	for {
+		sm := types.SocketMessage{}
+		fatalOnError(c.ReadJSON(&sm))
+		if sm.Type != "" {
+			ch <- &sm
+		}
+	}
+}
+
+func readKeysFromStdin(t *term.Term, ch chan<- []byte) {
+	for {
+		ch <- getKeyPress(t)
+	}
 }
 
 func childMain(args []string) {
@@ -164,25 +174,45 @@ func childMain(args []string) {
 		fatalOnError(err)
 	}(c)
 
+	// Open a terminal so we can poll keys from stdin.
+	t, _ := term.Open("/dev/tty")
+	term.RawMode(t)
+	defer func() {
+		t.Restore()
+	}()
+
+	keyCh := make(chan []byte)
+	wsCmdCh := make(chan *types.SocketMessage)
+
+	go readKeysFromStdin(t, keyCh)
+	go readWSMessages(c, wsCmdCh)
+
 	for {
-		key := getKeyPress()
-		switch {
-		case bytes.Equal(key, []byte{3}) || bytes.Equal(key, []byte{27}):
-			return
-		case bytes.Equal(key, []byte{13}):
-			err := sendMessage(c, "select_current_result", "")
-			fatalOnError(err)
-			return
-		case bytes.Equal(key, []byte{27, 91, 65}):
-			err := sendMessage(c, "highlight_prev_result", "")
-			fatalOnError(err)
-		case bytes.Equal(key, []byte{27, 91, 66}):
-			err := sendMessage(c, "highlight_next_result", "")
-			fatalOnError(err)
-		default:
-			r, _ := utf8.DecodeRune(key)
-			fmt.Printf("Unknown key pressed (%c)\n", r)
-			return
+		select {
+		case key := <-keyCh:
+			switch {
+			case bytes.Equal(key, []byte{3}) || bytes.Equal(key, []byte{27}):
+				return
+			case bytes.Equal(key, []byte{13}):
+				err := sendMessage(c, "select_current_result", "")
+				fatalOnError(err)
+				return
+			case bytes.Equal(key, []byte{27, 91, 65}):
+				err := sendMessage(c, "highlight_prev_result", "")
+				fatalOnError(err)
+			case bytes.Equal(key, []byte{27, 91, 66}):
+				err := sendMessage(c, "highlight_next_result", "")
+				fatalOnError(err)
+			default:
+				r, _ := utf8.DecodeRune(key)
+				fmt.Printf("Unknown key pressed (%c)\n", r)
+				return
+			}
+		case cmd := <-wsCmdCh:
+			switch cmd.Type {
+			case "browser_has_focus":
+				return
+			}
 		}
 	}
 }

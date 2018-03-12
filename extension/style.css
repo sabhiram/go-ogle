@@ -1,0 +1,13 @@
+
+.ogle-selected {
+    position: relative;
+	background-color: #32aeee20;
+}
+
+.ogle-selected:before {
+    content: "->";
+    position: absolute;
+    left: -8%;
+    top: 32%;
+    font-size: 25pt;
+}
