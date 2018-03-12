@@ -31,7 +31,6 @@ func New(c *websocket.Conn, ab types.AppBroadcaster) *Socket {
 
 // Returns true if the command passed in needs to be broadcasted.
 func (s *Socket) HandleAppSpecificCommands(sm *types.SocketMessage) bool {
-	fmt.Printf("APP SPECIFIC CMD HANDLER: %#v\n", sm)
 	switch sm.Type {
 	case "register_extension":
 		err := s.ab.RegisterExtensionSocket(s.ID())

@@ -123,7 +123,6 @@ func sendMessage(c *websocket.Conn, t string, d interface{}) error {
 	if err != nil {
 		return err
 	}
-
 	return c.WriteMessage(websocket.TextMessage, bs)
 }
 
