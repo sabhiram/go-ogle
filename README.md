@@ -11,7 +11,36 @@ A minimal command line app + a chrome extension which allows you to:
 
 ## Install
 
-TODO
+TODO:
+1. Install the plugin
+2. Install the CLI app
+
+## Design
+
+```
+                                        WebSocket Server
+
+                                       +-----------------+
+                             +--------->                 |
+ Chrome Browser              |         | localhost:18881 <------------------+
+                             |  +------*                 |                  |
++-------------------+        |  |      +-----------------+                  |
+|                   |        |  |                                           |
+|                   |        |  |                                           |
+|  Extension        |        |  |                                           |
+| +------------+    |        |  |                                           |
+| |            *-------------+  |       CLI App                             |
+| +---------^--+    |           |                                           |
+|           |       |           |      +-----------------+                  |
+|           +-------------------+      |                 |                  |
+|                   |                  |                 *------------------+
++-------------------+                  |                 |
+                                       |                 |
+                                       |                 |
+                                       |                 |
+                                       +-----------------+
+
+```
 
 ## Contents
 
