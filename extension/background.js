@@ -29,7 +29,7 @@ connect = function() {
 
 
 	ws.onopen = function() {
-		// socket is open ...
+		ws.send(JSON.stringify({Type: "register_extension", Data: ""}));
 	};
 	ws.onerror = function(err) {
 		reconnect();

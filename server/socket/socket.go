@@ -16,15 +16,34 @@ import (
 type Socket struct {
 	conn   *websocket.Conn
 	sendCh chan *types.SocketMessage
-	jb     types.JSONBroadcaster
+	ab     types.AppBroadcaster
 }
 
-func New(c *websocket.Conn, jb types.JSONBroadcaster) *Socket {
+func New(c *websocket.Conn, ab types.AppBroadcaster) *Socket {
 	return &Socket{
 		conn:   c,
 		sendCh: make(chan *types.SocketMessage),
-		jb:     jb,
+		ab:     ab,
 	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Returns true if the command passed in needs to be broadcasted.
+func (s *Socket) HandleAppSpecificCommands(sm *types.SocketMessage) bool {
+	switch sm.Type {
+	case "register_extension":
+		err := s.ab.RegisterExtensionSocket(s.ID())
+		if err != nil {
+			fmt.Printf("ERROR: %s\n", err.Error())
+		}
+		return false
+	}
+	return true
+}
+
+func (s *Socket) ID() string {
+	return fmt.Sprintf("%p", s)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -51,9 +70,11 @@ func (s *Socket) Read() {
 
 		switch mt {
 		case websocket.TextMessage:
-			sm := types.SocketMessage{}
+			sm := &types.SocketMessage{}
 			sm.Unmarshal(msg)
-			s.jb.BroadcastJSON(sm.Type, sm.Data)
+			if s.HandleAppSpecificCommands(sm) {
+				s.ab.BroadcastJSON(sm.Type, sm.Data)
+			}
 		default:
 			fmt.Printf("wsHandler :: unknown message type :: %d\n", mt)
 		}

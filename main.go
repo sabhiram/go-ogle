@@ -29,7 +29,6 @@ import (
 
 var (
 	cli = struct {
-		// Common args
 		isServer  bool
 		homedir   string
 		configDir string
@@ -104,9 +103,8 @@ func spawnServerThread() error {
 		return err
 	}
 
-	// Delay for a tiny bit to let the server socket power up.
 	fmt.Printf("Allowing server to startup before attempting connection...\n")
-	<-time.After(1000 * time.Millisecond) // TODO: Once the hub can forward commands to the ext, make this 10ms
+	<-time.After(10 * time.Millisecond)
 	return nil
 }
 

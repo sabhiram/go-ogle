@@ -23,6 +23,5 @@ TODO
 
 ## TODOs
 
-1. Hub should keep track of the extensions connection and push new queued messages to it on connect.
-2. Advanced keyboard input cases - next page / prev page / next-result from page etc
-3. If selected item is not focused on page - center it.
+1. Advanced keyboard input cases - next page / prev page / next-result from page etc
+2. If selected item is not focused on page - center it.

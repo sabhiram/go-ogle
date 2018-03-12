@@ -14,12 +14,6 @@ import (
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const (
-	cEnableDebugProfiling = true
-)
-
-////////////////////////////////////////////////////////////////////////////////
-
 var (
 	wsUpgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
@@ -44,10 +38,8 @@ func New(addr string, h *hub.Hub) (*Server, error) {
 		Server: &http.Server{
 			Addr: addr,
 		},
-
 		hub: h,
 	}
-
 	return s, s.setupRoutes()
 }
 
