@@ -1,11 +1,11 @@
 /*
- *  This content is injected by the `go-ogle` chrome extension for the 
+ *  This content is injected by the `go-ogle` chrome extension for the
  *  following purposes:
- *	
+ *
  *  1.  Open a socket to communicate with the extension.
  *  2.  React to requests from the extension to select the next / prev
  *	    search result (and apply appropriate styling).
- *  3.  This should also only be applied to pages that match the 
+ *  3.  This should also only be applied to pages that match the
  * 		google search page URL prefix.
  */
 
@@ -15,21 +15,21 @@ var port = chrome.runtime.connect({name: "go-ogle"})
   ;
 
 function getResult(idx) {
-	let results = document.querySelectorAll("#search .srg .g .rc");
+	let results = document.querySelectorAll("#search .g .rc .r a");
 	if (results.length > idx) return results[idx];
 	return null;
 }
 
 function highlighResult(el) {
-	// The style is applied and removed from the parent to get its 
+	// The style is applied and removed from the parent to get its
 	// padding highlighted as well.
-	el.parentElement.classList.add("ogle-selected");
+	el.parentElement.parentElement.classList.add("ogle-selected");
 }
 
 function unhighlighResult(el) {
-	// The style is applied and removed from the parent to get its 
+	// The style is applied and removed from the parent to get its
 	// padding highlighted as well.
-	el.parentElement.classList.remove("ogle-selected");
+	el.parentElement.parentElement.classList.remove("ogle-selected");
 }
 
 function setHighlightedResult(idx) {
@@ -49,7 +49,7 @@ function setPageURL(idx) {
 	let el = getResult(idx);
 	if (!el) return;
 
-	window.location = el.querySelector("h3.r a").href;
+	window.location = el.href;
 }
 
 port.onMessage.addListener(function(msg) {

@@ -166,11 +166,7 @@ func childMain(args []string) {
 	sendMessage(c, "open_new_tab_with_url", q)
 
 	defer func(c *websocket.Conn) {
-		err = sendMessage(c, "clear_selected", "")
-		fatalOnError(err)
-
-		err = c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
-		fatalOnError(err)
+		sendMessage(c, "clear_selected", "")
 	}(c)
 
 	// Open a terminal so we can poll keys from stdin.
@@ -189,6 +185,7 @@ func childMain(args []string) {
 	for {
 		select {
 		case key := <-keyCh:
+			fmt.Printf("GOT KEY: %#v\n", key)
 			switch {
 			case bytes.Equal(key, []byte{3}) || bytes.Equal(key, []byte{27}):
 				return
@@ -208,6 +205,7 @@ func childMain(args []string) {
 				return
 			}
 		case cmd := <-wsCmdCh:
+			fmt.Printf("Got msg: %s\n", cmd.Type)
 			switch cmd.Type {
 			case "browser_has_focus":
 				return
