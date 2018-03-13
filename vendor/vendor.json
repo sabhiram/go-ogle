@@ -1,0 +1,31 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "6l/wX/T8WQ/aDBY3qDlD+DxhrAM=",
+			"path": "github.com/gorilla/websocket",
+			"revision": "13e4d0621caa4d77fd9aa470ef6d7ab63d1a5e41",
+			"revisionTime": "2015-09-23T22:29:30Z"
+		},
+		{
+			"checksumSHA1": "zQwthDCaokPCqqolpCR4PdCjQo4=",
+			"path": "github.com/pkg/term",
+			"revision": "b1f72af2d63057363398bec5873d16a98b453312",
+			"revisionTime": "2016-07-05T08:19:19Z"
+		},
+		{
+			"checksumSHA1": "L7dFEYzHkAatKpLgN5g0zvcuPwo=",
+			"path": "github.com/pkg/term/termios",
+			"revision": "b1f72af2d63057363398bec5873d16a98b453312",
+			"revisionTime": "2016-07-05T08:19:19Z"
+		},
+		{
+			"checksumSHA1": "PKtIAxlXavF/8C+mDdOq3oNpeuM=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "8c0ece68c28377f4c326d85b94f8df0dace46f80",
+			"revisionTime": "2018-03-12T16:10:05Z"
+		}
+	],
+	"rootPath": "github.com/sabhiram/go-ogle"
+}
