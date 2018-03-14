@@ -1,0 +1,27 @@
+language: go
+
+go:
+- tip
+
+env:
+- PATH=$HOME/gopath/bin:$PATH
+
+before_install:
+- go get github.com/mitchellh/gox
+
+script:
+- go test -v ./...
+- gox -os "linux darwin windows" -arch="amd64" -output="build.." -ldflags "-X main.Rev=`git
+  rev-parse --short HEAD`" -verbose ./...
+
+deploy:
+  provider: releases
+  api_key:
+    secure: gxiaqxhrKvmiiQdD+fLS1qyiPolONbpPCk4w2yiWbYnpFz2TZcvAHPE/aygNQ2XeA9kZgtWSX9ieGy4apq9BwhKphaGt+6UFULKt2ac+op2yvtjXvNAhjp3Erq7Kr1lMzIJONr/lyjxxVj/kFELB9U9LaYbAgzPAdHPo2tpdWRADcHkHTBThb2+8/af8inK8Z1cB4pySo+Z0CMkODHWta1Y4U+eowK/vx2oiZp1jG3zSICXzlf+eJwT78p7zhNPN+XVDXfdnjYtW4XSlX40Jw90LOlQer1H8f2R5Rg3+4SP1HkEJATT1zUNk7pRF6SHxOElb+Uc9wueZ7R9qEMuijwq3iU20+ZIvD1JgA/LzxAlIo7K2NKAOg42DcQIIHLLAVfnJ/LktRJkcVWtScSquO9OKzVL+rTt1jQutx1K/Atb8rXq53CytLCW1r3GE6lWqH65+0q8VCSS0y5hf2FoYhOMKaExqh7ljulpUNl397hfqXO5NBIT4CvfmFs1/7ozLi2RDW/dhjoCI+KJHnMgyzBZfKN8hdS6FADWfkx9a33HlrYhnUJ4nwy5KIMnfbxc0Ny3QiP9UIfd6MhMSlhHadKn2HXy5A7OkuKUw5oSktQPZXw7mEFteJe22tSJXtgz144AU+vlnvYys51KHsGcsiEhJS6i8tnv/52Z2oMTrrs4=
+  file:
+    - build.windows.amd64.exe
+    - build.darwin.amd64
+    - build.linux.amd64
+  on:
+    repo: sabhiram/go-ogle
+    tags: true
