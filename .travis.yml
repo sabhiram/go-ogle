@@ -1,18 +1,18 @@
 language: go
 
 go:
-- tip
+  - "1.10"
+  - tip
 
 env:
-- PATH=$HOME/gopath/bin:$PATH
+  - PATH=$HOME/gopath/bin:$PATH
 
 before_install:
-- go get github.com/mitchellh/gox
+  - go get github.com/mitchellh/gox
 
 script:
-- go test -v ./...
-- gox -os "linux darwin" -arch="amd64" -output="build.." -ldflags "-X main.Rev=`git
-  rev-parse --short HEAD`" -verbose ./...
+  - go test -v ./...
+  - gox -os "linux darwin" -arch="amd64" -output="build.." -ldflags "-X main.Rev=`git rev-parse --short HEAD`" -verbose ./...
 
 deploy:
   provider: releases
