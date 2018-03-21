@@ -15,6 +15,10 @@
         "scripts": ["lib/underscore-min.js", "background.js"]
     },
 
+    "icons": {
+        "128": "icon128.png"
+    },
+
     "browser_action": {
         "default_title": "go-ogle"
     }
